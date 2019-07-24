@@ -1,0 +1,13 @@
+- hosts: all
+  vars:
+      es_cluster_name: #cluster name
+      es_port: #TCP Port
+      es_user: #desired user name
+      team_name: "{{ es_user }}"
+      heap_min: #min memory
+      heap_max: #max memory
+  become: yes
+  gather_facts: yes
+
+  roles:
+    - role: ansible-elasticsearch-cluster

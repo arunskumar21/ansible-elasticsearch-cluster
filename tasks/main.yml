@@ -1,0 +1,41 @@
+---
+- name: Create service account for elasticsearch user
+  user: name={{ team_name }}
+      system=yes
+      state=present
+
+- name: install one specific version of java
+  yum:
+    name: java-1.8.0-openjdk
+    state: present
+
+- name: Download and unzip es zip from es repo
+  unarchive:
+    src: https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-5.4.1.zip
+    dest: /opt
+    remote_src: yes
+
+- name: Move es directory to teamname
+  command: mv /opt/elasticsearch-5.4.1 /opt/elasticsearch-5.4.1-{{ team_name }}
+
+- name: elastic  conf file
+  template: src=elasticsearch.yml dest=/opt/elasticsearch-5.4.1-{{ team_name }}/config/elasticsearch.yml
+
+- name: elastic  jvm options file
+  template: src=jvm.options dest=/opt/elasticsearch-5.4.1-{{ team_name }}/config/jvm.options
+
+- name: elastic  jvm options file
+  template: src=start.sh dest=/opt/elasticsearch-5.4.1-{{ team_name }}/start.sh mode=644
+
+- name: Fixing permissions
+  command: chown -R {{ team_name }}.{{ team_name }} /opt/elasticsearch-5.4.1-{{ team_name }}
+
+- name: Setting max file descriptors, locked memory size and vm.max_map_count
+  lineinfile: dest=/etc/security/limits.conf regexp={{ item.oldline }} line={{ item.newline }}
+  with_items:
+    - { "oldline": "^{{ team_name }} *soft *nofile", "newline": "{{ team_name }} soft nofile 100000" }
+    - { "oldline": "^{{ team_name }} *hard *nofile", "newline": "{{ team_name }} hard nofile 200000" }
+    - { "oldline": "^{{ team_name }} *soft *nproc", "newline": "{{ team_name }} soft nproc 4096" }
+    - { "oldline": "^{{ team_name }} *hard *nproc", "newline": "{{ team_name }} hard nproc 4096" }
+    - { "oldline": "^{{ team_name }} *soft *memlock", "newline": "{{ team_name }} soft memlock unlimited" }
+    - { "oldline": "^{{ team_name }} *hard *memlock", "newline": "{{ team_name }} hard memlock unlimited" }
